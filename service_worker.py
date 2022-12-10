@@ -28,7 +28,7 @@ local_tts_engine.setProperty('volume', 0.9)
 # kafka Config
 kafka_bootstrap_server = os.environ.get('KAFKA_BOOTSTRAP', 'pkc-4r087.us-west2.gcp.confluent.cloud:9092')
 kafka_api_key = os.environ.get('KAFKA_API_KEY', '4BRDEW6OW6Z35KZK')
-kafka_secret_key = os.environ.get('KAFKA_SECRET_KEY', 'pqfV+6B+nDwtrxr0GckMlrqofW5fW/kLPvWL83w+oZoPvkzwOzl5f/rhJbdYJOTn')
+kafka_secret_key = os.environ.get('KAFKA_SECRET_KEY', '')
 kafka_config = {
     'bootstrap.servers':'pkc-4r087.us-west2.gcp.confluent.cloud:9092',
     'security.protocol':'SASL_SSL',
