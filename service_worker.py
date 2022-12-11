@@ -84,10 +84,17 @@ def generate_audio(text, file_path, audio_file_name):
     local_tts_engine.save_to_file(text, audio_file_path)
     local_tts_engine.runAndWait()
     logger.info("Done processing audio wrtiten to file")
+    logger.info(os.listdir("tmp"))
+    logger.info(os.listdir(os.path.join("tmp", "output")))
+    logger.info(os.listdir(os.path.join("tmp", "input")))
     return audio_file_path
 
 
 def write_audio_file(file_path, file_name):
+    logger.info("Sending audio file to minio")
+    logger.info(os.listdir("tmp"))
+    logger.info(os.listdir(os.path.join("tmp", "output")))
+    logger.info(os.listdir(os.path.join("tmp", "input")))
     return minio_client.fput_object('audio-bucket', object_name=file_name, file_path=file_path)
 
 while True:
