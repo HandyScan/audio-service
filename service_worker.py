@@ -90,13 +90,16 @@ def write_audio_file(file_path, file_name):
     return minio_client.fput_object('audio-bucket', object_name=file_name, file_path=file_path)
 
 while True:
-    file_detail = get_details_from_kafka()
-    file_path = None
-    text = ''
-    if file_detail:
-        text, file_path = get_file(file_detail)
-        if file_path.endswith('txt') and len(text) != 0:
-            audio_file_name = file_detail['file_name'].split(".")[0]+".mp3"
-            audio_file_path = generate_audio(text, file_path, audio_file_name)
-            write_audio_file(audio_file_path, audio_file_name)
-            logger.info("SUCCESS Done processing")
+    try:
+        file_detail = get_details_from_kafka()
+        file_path = None
+        text = ''
+        if file_detail:
+            text, file_path = get_file(file_detail)
+            if file_path.endswith('txt') and len(text) != 0:
+                audio_file_name = file_detail['file_name'].split(".")[0]+".mp3"
+                audio_file_path = generate_audio(text, file_path, audio_file_name)
+                write_audio_file(audio_file_path, audio_file_name)
+                logger.info("SUCCESS Done processing")
+    except Exception as err:
+        logger.error(err)
