@@ -3,3 +3,4 @@ pyttsx3==2.90
 jsonpickle==2.2.0
 confluent-kafka==1.9.2
 ffmpeg==1.4
+pymongo==4.3.3
