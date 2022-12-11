@@ -6,7 +6,7 @@ COPY service_worker.py /app
 COPY requirements.txt  /app
 
 RUN apt-get update \
-  && apt-get -y install espeak python3-pyaudio
+  && apt-get -y install espeak python3-pyaudio ffmpeg
 
 RUN pip3 install -r requirements.txt
 
