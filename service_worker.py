@@ -79,10 +79,11 @@ def get_file(file_detail):
 
 
 def generate_audio(text, file_path, audio_file_name):
-    logger.info("Genrating audio for " + file_path + "and save in " + audio_file_name)
     audio_file_path = "tmp/output/" + audio_file_name
+    logger.info("Genrating audio for " + file_path + "and save in " + audio_file_path)
     local_tts_engine.save_to_file(text, audio_file_path)
     local_tts_engine.runAndWait()
+    logger.info("Done processing audio wrtiten to file")
     return audio_file_path
 
 
@@ -102,4 +103,5 @@ while True:
                 write_audio_file(audio_file_path, audio_file_name)
                 logger.info("SUCCESS Done processing")
     except Exception as err:
+        logger.error("Error in Audio Service")
         logger.error(err)
