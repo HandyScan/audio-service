@@ -71,7 +71,7 @@ def get_details_from_kafka():
 
 
 def get_file(file_detail):
-    file_path = os.path.join("tmp\input", file_detail['file_name'])
+    file_path = os.path.join("tmp/input", file_detail['file_name'])
     logger.info(file_path)
     text = minio_client.get_object(file_detail['bucket'], file_detail['file_name'], file_path).data.decode()
     logger.info(text)
@@ -80,7 +80,7 @@ def get_file(file_detail):
 
 def generate_audio(text, file_path, audio_file_name):
     logger.info("Genrating audio for " + file_path + "and save in " + audio_file_name)
-    audio_file_path = "tmp\output\\" + audio_file_name
+    audio_file_path = "tmp/output/" + audio_file_name
     local_tts_engine.save_to_file(text, audio_file_path)
     local_tts_engine.runAndWait()
     return audio_file_path
