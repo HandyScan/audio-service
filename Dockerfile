@@ -5,8 +5,12 @@ WORKDIR /app
 COPY service_worker.py /app
 COPY requirements.txt  /app
 
-RUN mkdir -p /app/tmp/output
-RUN mkdir -p /app/tmp/input
+RUN mkdir -p /app/tmp
+RUN chmod -R 777 /app/tmp
+
+COPY tmp/input/test.txt /app/tmp
+COPY tmp/output/test.mp3 /app/tmp
+
 RUN apt-get update \
   && apt-get -y install espeak python3-pyaudio ffmpeg
 

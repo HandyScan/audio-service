@@ -5,6 +5,7 @@ import sys
 import logging
 import jsonpickle
 from minio import Minio
+from time import sleep
 from confluent_kafka import Producer, Consumer
 
 # logging 
@@ -71,28 +72,28 @@ def get_details_from_kafka():
 
 
 def get_file(file_detail):
-    file_path = os.path.join("input", file_detail['file_name'])
-    logger.info(file_path)
+    # file_path = os.path.join("/tmp", "input", file_detail['file_name'])
+    logger.info("Text File name to be read: " + file_detail['file_name'])
     text = minio_client.get_object(file_detail['bucket'], file_detail['file_name']).data.decode()
     logger.info(text)
-    return text, file_path
+    return text, file_detail['file_name']
 
 
 def generate_audio(text, audio_file_name):
-    audio_file_path = os.path.join("output" + audio_file_name)
-    logger.info("Genrating audio for " + file_path + "and save in " + audio_file_path)
+    cwd = os.getcwd()
+    logger.info(cwd)
+    audio_file_path = os.path.join(cwd, "tmp", audio_file_name)
+    logger.info("Genrating audio in location: " + audio_file_path)
     local_tts_engine.save_to_file(text, audio_file_path)
     local_tts_engine.runAndWait()
+    sleep(90)
     logger.info("Done processing audio wrtiten to file")
-    logger.info(os.listdir("input"))
-    logger.info(os.listdir("output"))
+    logger.info(os.listdir(os.path.join(cwd, "tmp")))
     return audio_file_path
 
 
 def write_audio_file(file_path, file_name):
     logger.info("Sending audio file to minio")
-    logger.info(os.listdir("output"))
-    logger.info(os.listdir("input"))
     return minio_client.fput_object('audio-bucket', object_name=file_name, file_path=file_path)
 
 while True:
@@ -101,8 +102,8 @@ while True:
         file_path = None
         text = ''
         if file_detail:
-            text, file_path = get_file(file_detail)
-            if file_path.endswith('txt') and len(text) != 0:
+            text, file_name = get_file(file_detail)
+            if file_name.endswith('txt') and len(text) != 0:
                 audio_file_name = file_detail['file_name'].split(".")[0]+".mp3"
                 audio_file_path = generate_audio(text, audio_file_name)
                 write_audio_file(audio_file_path, audio_file_name)
