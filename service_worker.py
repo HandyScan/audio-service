@@ -96,7 +96,7 @@ def generate_audio(text, audio_file_name):
     logger.info("Genrating audio in location: " + audio_file_path)
     local_tts_engine.save_to_file(text, audio_file_path)
     local_tts_engine.runAndWait()
-    # sleep(90)
+    sleep(90)
     logger.info("Done processing audio wrtiten to file")
     logger.info(os.listdir(os.path.join(cwd, "tmp")))
     return audio_file_path
