@@ -5,7 +5,9 @@ import sys
 import logging
 import jsonpickle
 from minio import Minio
+from time import sleep
 from confluent_kafka import Producer, Consumer
+from pymongo import MongoClient
 
 # logging 
 logger = logging.getLogger()
@@ -16,6 +18,15 @@ handler.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
+# Mongo DB
+monogo_user = os.environ.get("MONGO_USERNAME", "handyscan_admin")
+mongo_pwd = os.environ.get("MONGO_PASSWORD", "handyscan_admin")
+mongo_connection_url = "mongodb+srv://" + monogo_user + ":" + mongo_pwd + "@glasscode.8iobb.mongodb.net/handyscan?retryWrites=true&w=majority"
+client = MongoClient(mongo_connection_url)
+db = client.handyscan
+print("Connected to Mongo")
+
 
 # Init the pytttsx3 engine with engine voice property
 local_tts_engine = pyttsx3.init()
@@ -28,7 +39,7 @@ local_tts_engine.setProperty('volume', 0.9)
 # kafka Config
 kafka_bootstrap_server = os.environ.get('KAFKA_BOOTSTRAP', 'pkc-4r087.us-west2.gcp.confluent.cloud:9092')
 kafka_api_key = os.environ.get('KAFKA_API_KEY', '4BRDEW6OW6Z35KZK')
-kafka_secret_key = os.environ.get('KAFKA_SECRET_KEY', '')
+kafka_secret_key = os.environ.get('KAFKA_SECRET_KEY', 'pqfV+6B+nDwtrxr0GckMlrqofW5fW/kLPvWL83w+oZoPvkzwOzl5f/rhJbdYJOTn')
 kafka_config = {
     'bootstrap.servers':'pkc-4r087.us-west2.gcp.confluent.cloud:9092',
     'security.protocol':'SASL_SSL',
@@ -71,31 +82,49 @@ def get_details_from_kafka():
 
 
 def get_file(file_detail):
-    file_path = os.path.join("tmp/input", file_detail['file_name'])
-    logger.info(file_path)
-    text = minio_client.get_object(file_detail['bucket'], file_detail['file_name'], file_path).data.decode()
+    # file_path = os.path.join("/tmp", "input", file_detail['file_name'])
+    logger.info("Text File name to be read: " + file_detail['file_name'])
+    text = minio_client.get_object(file_detail['bucket'], file_detail['file_name']).data.decode()
     logger.info(text)
-    return text, file_path
+    return text, file_detail['file_name']
 
 
-def generate_audio(text, file_path, audio_file_name):
-    audio_file_path = "tmp/output/" + audio_file_name
-    logger.info("Genrating audio for " + file_path + "and save in " + audio_file_path)
+def generate_audio(text, audio_file_name):
+    cwd = os.getcwd()
+    logger.info(cwd)
+    audio_file_path = os.path.join(cwd, "tmp", audio_file_name)
+    logger.info("Genrating audio in location: " + audio_file_path)
     local_tts_engine.save_to_file(text, audio_file_path)
     local_tts_engine.runAndWait()
+    sleep(90)
     logger.info("Done processing audio wrtiten to file")
-    logger.info(os.listdir("tmp"))
-    logger.info(os.listdir(os.path.join("tmp", "output")))
-    logger.info(os.listdir(os.path.join("tmp", "input")))
+    logger.info(os.listdir(os.path.join(cwd, "tmp")))
     return audio_file_path
 
 
 def write_audio_file(file_path, file_name):
     logger.info("Sending audio file to minio")
-    logger.info(os.listdir("tmp"))
-    logger.info(os.listdir(os.path.join("tmp", "output")))
-    logger.info(os.listdir(os.path.join("tmp", "input")))
     return minio_client.fput_object('audio-bucket', object_name=file_name, file_path=file_path)
+
+def update_metadata(file_detail, audio_file_name):
+    filter = {'user': file_detail['user_name'], 'collection': file_detail['collection']}
+    file_object = db.userRecord.find_one(filter)
+    logger.info(file_object)
+    update_file_object = file_object['files']
+    logger.info("BEFORE UPDATE")
+    logger.info(update_file_object)
+    update_file_object[file_detail['file_name'].split(".")[0]]['status'] = "DONE"
+    update_file_object[file_detail['file_name'].split(".")[0]]['audioFile'] = {
+        'bucket': 'audio-bucket', 
+        'fileName': audio_file_name
+    }
+
+    logger.info("Updating Record Metadata")
+    logger.info(update_file_object)
+    return db.userRecord.find_one_and_update(
+        filter,
+        {'$set': {'files' : update_file_object}}    
+    )
 
 while True:
     try:
@@ -103,12 +132,12 @@ while True:
         file_path = None
         text = ''
         if file_detail:
-            text, file_path = get_file(file_detail)
-            if file_path.endswith('txt') and len(text) != 0:
+            text, file_name = get_file(file_detail)
+            if file_name.endswith('txt') and len(text) != 0:
                 audio_file_name = file_detail['file_name'].split(".")[0]+".mp3"
-                audio_file_path = generate_audio(text, file_path, audio_file_name)
+                audio_file_path = generate_audio(text, audio_file_name)
                 write_audio_file(audio_file_path, audio_file_name)
+                update_metadata(file_detail, audio_file_name)
                 logger.info("SUCCESS Done processing")
     except Exception as err:
-        logger.error("Error in Audio Service")
         logger.error(err)
