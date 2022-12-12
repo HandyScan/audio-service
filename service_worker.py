@@ -126,18 +126,19 @@ def update_metadata(file_detail, audio_file_name):
         {'$set': {'files' : update_file_object}}    
     )
 
-# while True:
-try:
-    file_detail = get_details_from_kafka()
-    file_path = None
-    text = ''
-    if file_detail:
-        text, file_name = get_file(file_detail)
-        if file_name.endswith('txt') and len(text) != 0:
-            audio_file_name = file_detail['file_name'].split(".")[0]+".mp3"
-            audio_file_path = generate_audio(text, audio_file_name)
-            write_audio_file(audio_file_path, audio_file_name)
-            update_metadata(file_detail, audio_file_name)
-            logger.info("SUCCESS Done processing")
-except Exception as err:
-    logger.error(err)
+while True:
+    try:
+        file_detail = get_details_from_kafka()
+        file_path = None
+        text = ''
+        if file_detail:
+            text, file_name = get_file(file_detail)
+            if file_name.endswith('txt') and len(text) != 0:
+                audio_file_name = file_detail['file_name'].split(".")[0]+".mp3"
+                audio_file_path = generate_audio(text, audio_file_name)
+                write_audio_file(audio_file_path, audio_file_name)
+                update_metadata(file_detail, audio_file_name)
+                logger.info("SUCCESS Done processing")
+                # sys.exit()
+    except Exception as err:
+        logger.error(err)
